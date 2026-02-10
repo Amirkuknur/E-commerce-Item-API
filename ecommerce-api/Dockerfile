@@ -1,29 +1,28 @@
-# ===== Stage 1: Build the application using Maven (JDK 21) =====
-FROM maven:3.9.6-eclipse-temurin-21 AS build
+# Stage 1: Build the application
+FROM eclipse-temurin:21-jdk AS builder
 
 WORKDIR /app
 
-# Copy pom.xml and download dependencies first (cache optimization)
+# Copy Maven wrapper
+COPY mvnw .
+COPY .mvn .mvn
+RUN chmod +x mvnw
+
+# Copy project files
 COPY pom.xml .
-RUN mvn dependency:go-offline -B
+COPY src src
 
-# Copy the full project
-COPY src ./src
-
-# Build the project (skip tests for faster build)
-RUN mvn clean package -DskipTests
+# Build project
+RUN ./mvnw clean package -DskipTests
 
 
-# ===== Stage 2: Run the application (JRE 21) =====
+# Stage 2: Run the built jar
 FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
-# Copy the jar file from build stage
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=builder /app/target/ecommerce-api-0.0.1-SNAPSHOT.jar app.jar
 
-# Expose your server port (your app uses 8090)
-EXPOSE 8090
+EXPOSE 8080
 
-# Start the Spring Boot application
 ENTRYPOINT ["java", "-jar", "app.jar"]
