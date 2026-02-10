@@ -1,4 +1,4 @@
-# Step 1: Build stage (Maven + JDK 21)
+# ---------- Stage 1: Build ----------
 FROM maven:3.9.6-eclipse-temurin-21 AS build
 WORKDIR /app
 
@@ -6,18 +6,19 @@ WORKDIR /app
 COPY pom.xml .
 COPY src ./src
 
-# Build the jar (skip tests for faster builds)
+# Build the application
 RUN mvn clean package -DskipTests
 
-# Step 2: Run stage (JDK 21 runtime)
+
+# ---------- Stage 2: Run ----------
 FROM eclipse-temurin:21-jdk
 WORKDIR /app
 
 # Copy jar from build stage
 COPY --from=build /app/target/*.jar app.jar
 
-# Expose application port
+# Expose your app port
 EXPOSE 8090
 
-# Run Spring Boot app
+# Run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
